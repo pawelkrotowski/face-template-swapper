@@ -57,8 +57,15 @@ def startup_event():
     os.makedirs(UPLOADS_DIR, exist_ok=True)
     os.makedirs(OUTPUTS_DIR, exist_ok=True)
 
-    face_app = FaceAnalysis(name="buffalo_l", providers=PROVIDERS, root=INSIGHTFACE_HOME)
-    face_app.prepare(ctx_id=CTX_ID, det_size=(640, 640))
+    try:
+        print("[INFO] Providers available:", _avail, "using:", PROVIDERS, "CTX_ID:", CTX_ID)
+        print("[INFO] INSIGHTFACE_HOME:", INSIGHTFACE_HOME)
+        face_app = FaceAnalysis(name="buffalo_l", providers=PROVIDERS, root=INSIGHTFACE_HOME)
+        face_app.prepare(ctx_id=CTX_ID, det_size=(640, 640))  # możesz podnieść do (1024,1024)
+        print("[OK] FaceAnalysis ready")
+    except Exception as e:
+        init_errors.append(f"face_app init failed: {e}")
+        print("[WARN] face_app init failed:", e)
 
     # Try local file first (offline-friendly), then remote name
     local_inswapper = os.path.join(INSIGHTFACE_HOME, "models", "inswapper_128.onnx")
