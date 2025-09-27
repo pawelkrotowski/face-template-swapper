@@ -1,0 +1,44 @@
+services:
+  gateway:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+      - inference-face
+    restart: unless-stopped
+
+  api:
+    build: ./services/api
+    env_file: .env
+    environment:
+      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS}
+      - UPLOADS_DIR=${UPLOADS_DIR}
+      - OUTPUTS_DIR=${OUTPUTS_DIR}
+      - INFER_BASE_URL=http://inference-face:8001
+    volumes:
+      - ./data/uploads:${UPLOADS_DIR}
+      - ./data/outputs:${OUTPUTS_DIR}
+    restart: unless-stopped
+
+  inference-face:
+    build: ./services/inference-face
+    env_file: .env
+    environment:
+      - INSIGHTFACE_HOME=${INSIGHTFACE_HOME}
+      - UPLOADS_DIR=${UPLOADS_DIR}
+      - OUTPUTS_DIR=${OUTPUTS_DIR}
+    # Comment out the next line if you don't have GPU/toolkit
+    gpus: all
+    shm_size: "1g"
+    volumes:
+      - ./data/uploads:${UPLOADS_DIR}
+      - ./data/outputs:${OUTPUTS_DIR}
+      - ./models_cache:${INSIGHTFACE_HOME}
+    restart: unless-stopped
+
+networks:
+  default:
+    name: face-template-net
